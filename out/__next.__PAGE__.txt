@@ -1,0 +1,6 @@
+1:"$Sreact.fragment"
+2:I[55302,["/kirakira-typing-school/_next/static/chunks/0typu5mmra_zv.js","/kirakira-typing-school/_next/static/chunks/0~l2aiozu3c4i.js"],"KirakiraTypingApp"]
+3:I[25326,["/kirakira-typing-school/_next/static/chunks/0typu5mmra_zv.js"],"OutletBoundary"]
+4:"$Sreact.suspense"
+0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{}],[["$","script","script-0",{"src":"/kirakira-typing-school/_next/static/chunks/0~l2aiozu3c4i.js","async":true}]],["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"jHkuX6Ygj4kDECIpvJAEt"}
+5:null
