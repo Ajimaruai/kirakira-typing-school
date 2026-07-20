@@ -46,7 +46,8 @@ test("avatar visuals support CSS, emoji, and layered images without changing ite
 
 test("starter layered-image placeholders and avatar asset folders exist", async () => {
   for (const path of [
-    "../public/assets/avatar/base/.gitkeep",
+    "../public/assets/avatar/base/body.svg",
+    "../public/assets/avatar/base/face.svg",
     "../public/assets/avatar/hair/hair-bob.svg",
     "../public/assets/avatar/outfits/outfit-uniform.svg",
     "../public/assets/avatar/shoes/shoes-brown.svg",
@@ -55,6 +56,31 @@ test("starter layered-image placeholders and avatar asset folders exist", async 
     "../public/assets/avatar/backgrounds/.gitkeep",
     "../public/assets/avatar/thumbnails/hair-bob.svg",
   ]) await access(new URL(path, import.meta.url));
+});
+
+test("avatar auto mode requires every core image and successful loads", async () => {
+  const { avatarLayerKey, requiredAvatarLayerSlots, resolveAutoAvatarDisplayMode } = await import(
+    new URL("../features/avatar/displayMode.ts", import.meta.url)
+  );
+  const layers = requiredAvatarLayerSlots.map((slot) => ({ slot, src: `/assets/${slot}.webp` }));
+  const loaded = Object.fromEntries(layers.map((layer) => [avatarLayerKey(layer), "loaded"]));
+
+  assert.equal(resolveAutoAvatarDisplayMode(layers, loaded), "layeredAvatar");
+  assert.equal(resolveAutoAvatarDisplayMode(layers.slice(1), loaded), "cssFallback");
+  assert.equal(resolveAutoAvatarDisplayMode(layers, { ...loaded, [avatarLayerKey(layers[0])]: "error" }), "cssFallback");
+  assert.equal(resolveAutoAvatarDisplayMode(layers, {}), "cssFallback");
+});
+
+test("avatar base body and face stay outside shop item data", async () => {
+  const base = await readFile(new URL("../data/avatarBase.ts", import.meta.url), "utf8");
+  const items = await readFile(new URL("../data/items.ts", import.meta.url), "utf8");
+  const avatar = await readFile(new URL("../components/Avatar.tsx", import.meta.url), "utf8");
+
+  assert.match(base, /slot: "body"/);
+  assert.match(base, /slot: "face"/);
+  assert.doesNotMatch(items, /itemId: "(?:body|face)"/);
+  assert.match(avatar, /renderMode = "auto"/);
+  assert.match(avatar, /data-avatar-display-mode=\{displayMode\}/);
 });
 
 test("avatar asset paths receive the GitHub Pages base path", async () => {
