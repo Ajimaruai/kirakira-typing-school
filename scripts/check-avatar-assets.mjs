@@ -9,19 +9,31 @@ const REFERENCE = {
   label: "主人公基準マスター",
 };
 
+const SOURCE_LAYER_ASSETS = [
+  ["design/reference/layers/face-v1.png", 704, 1208],
+  ["design/reference/layers/body-v1.png", 704, 1208],
+].map(([path, width, height]) => ({ path, width, height, requireAlpha: true, label: "レイヤー候補原本" }));
+
 const LAYER_ASSETS = [
-  ["public/assets/avatar/base/body.webp", 704, 1208],
-  ["public/assets/avatar/base/face.webp", 704, 1208],
-  ["public/assets/avatar/hair/hair-bob-back.webp", 704, 1208],
-  ["public/assets/avatar/hair/hair-bob-front.webp", 704, 1208],
-  ["public/assets/avatar/outfits/outfit-uniform.webp", 704, 1208],
-  ["public/assets/avatar/shoes/shoes-brown.webp", 704, 1208],
-  ["public/assets/avatar/accessories/accessory-ribbon.webp", 704, 1208],
-  ["public/assets/avatar/thumbnails/hair-bob.webp", 512, 512],
-  ["public/assets/avatar/thumbnails/outfit-uniform.webp", 512, 512],
-  ["public/assets/avatar/thumbnails/shoes-brown.webp", 512, 512],
-  ["public/assets/avatar/thumbnails/accessory-ribbon.webp", 512, 512],
-].map(([path, width, height]) => ({ path, width, height, requireAlpha: true, label: "アバター素材" }));
+  ["public/assets/avatar/base/body.webp", 704, 1208, true],
+  ["public/assets/avatar/base/face.webp", 704, 1208, true],
+  ["public/assets/avatar/hair/hair-bob-back.webp", 704, 1208, false],
+  ["public/assets/avatar/hair/hair-bob-front.webp", 704, 1208, false],
+  ["public/assets/avatar/outfits/outfit-uniform.webp", 704, 1208, false],
+  ["public/assets/avatar/shoes/shoes-brown.webp", 704, 1208, false],
+  ["public/assets/avatar/accessories/accessory-ribbon.webp", 704, 1208, false],
+  ["public/assets/avatar/thumbnails/hair-bob.webp", 512, 512, false],
+  ["public/assets/avatar/thumbnails/outfit-uniform.webp", 512, 512, false],
+  ["public/assets/avatar/thumbnails/shoes-brown.webp", 512, 512, false],
+  ["public/assets/avatar/thumbnails/accessory-ribbon.webp", 512, 512, false],
+].map(([path, width, height, requiredNow]) => ({
+  path,
+  width,
+  height,
+  requiredNow,
+  requireAlpha: true,
+  label: "アバター素材",
+}));
 
 function inspectPng(buffer) {
   const signature = "89504e470d0a1a0a";
@@ -97,14 +109,26 @@ async function inspectAsset(asset) {
 }
 
 const checkAll = process.argv.includes("--all");
-const assets = checkAll ? [REFERENCE, ...LAYER_ASSETS] : [REFERENCE];
+const checkSources = process.argv.includes("--sources");
+const assets = checkAll
+  ? [REFERENCE, ...LAYER_ASSETS]
+  : checkSources
+    ? [REFERENCE, ...SOURCE_LAYER_ASSETS]
+    : [REFERENCE];
 const results = await Promise.all(assets.map(inspectAsset));
 
-console.log(checkAll ? "アバター素材一式を検査します。" : `${REFERENCE.label}画像を検査します。`);
+console.log(
+  checkAll
+    ? "アバター素材一式を検査します。"
+    : checkSources
+      ? "主人公マスターとレイヤー候補原本を検査します。"
+      : `${REFERENCE.label}画像を検査します。`,
+);
 for (const result of results) {
   const { asset } = result;
   if (result.status === "missing") {
-    console.log(`✗ ${asset.path}: ファイルがありません`);
+    const required = asset.requiredNow !== false;
+    console.log(`${required ? "✗" : "○"} ${asset.path}: ${required ? "ファイルがありません" : "未制作（現在は正常）"}`);
     continue;
   }
   if (result.status === "unsupported") {
@@ -119,7 +143,9 @@ for (const result of results) {
   console.log(`${marker} ${asset.path}: ${image.format}, ${sizeText}, ${alphaText}`);
 }
 
-const failed = results.filter((result) => result.status !== "ok");
+const failed = results.filter(
+  (result) => result.status !== "ok" && !(result.status === "missing" && result.asset.requiredNow === false),
+);
 if (failed.length > 0) {
   console.error(`\n${failed.length}件を確認してください。`);
   process.exitCode = 1;

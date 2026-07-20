@@ -72,12 +72,16 @@ test("avatar auto mode requires every core image and successful loads", async ()
 });
 
 test("avatar base body and face stay outside shop item data", async () => {
+  await access(new URL("../public/assets/avatar/base/body.webp", import.meta.url));
+  await access(new URL("../public/assets/avatar/base/face.webp", import.meta.url));
   const base = await readFile(new URL("../data/avatarBase.ts", import.meta.url), "utf8");
   const items = await readFile(new URL("../data/items.ts", import.meta.url), "utf8");
   const avatar = await readFile(new URL("../components/Avatar.tsx", import.meta.url), "utf8");
 
   assert.match(base, /slot: "body"/);
   assert.match(base, /slot: "face"/);
+  assert.match(base, /\/assets\/avatar\/base\/body\.webp/);
+  assert.match(base, /\/assets\/avatar\/base\/face\.webp/);
   assert.doesNotMatch(items, /itemId: "(?:body|face)"/);
   assert.match(avatar, /renderMode = "auto"/);
   assert.match(avatar, /data-avatar-display-mode=\{displayMode\}/);
