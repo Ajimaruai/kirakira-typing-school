@@ -14,6 +14,8 @@
     "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
     "test": "pnpm run build:pages && node --test tests/app-structure.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
+    "check:avatar-reference": "node scripts/check-avatar-assets.mjs",
+    "check:avatar-assets": "node scripts/check-avatar-assets.mjs --all",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
