@@ -174,7 +174,107 @@ pnpm dev
 - `ownedByDefault`: 最初から所持させる場合は`true`
 - `unlockCondition`: `always`、指定ステージクリア、指定レベル解放
 - `rewardType`: `shop`、`stageReward`、`both`
-- `visualType`と`visualConfig`: 現在はCSSや絵文字用。将来PNG/SVGのパスを持つ形へ拡張できます
+- `visualType`と`visualConfig`: CSS、絵文字、画像レイヤーの表示方法を指定します
+
+## アバター画像レイヤーを追加する方法
+
+現在のCSS・絵文字アバターは残したまま、`layeredImage`形式の画像素材も使えます。画像が未設定、または読み込みに失敗した場合は、`styleKey`、`symbol`、`icon`を使った従来表示へ戻るため、アイテムを1点ずつ安全に画像化できます。
+
+### 画像素材の置き場所
+
+画像は`public/assets/avatar/`以下へ置きます。
+
+```text
+public/assets/avatar/
+├── base/          顔や基本ボディ
+├── hair/          髪型レイヤー
+├── outfits/       服レイヤー
+├── shoes/         靴レイヤー
+├── accessories/   アクセサリー
+├── pets/          将来のペット
+├── backgrounds/   将来の背景
+└── thumbnails/    ショップ・報酬画面用の正方形画像
+```
+
+アバターへ重ねる画像は、すべて同じ基準キャンバスにしてください。現在の基準座標は`176 × 302`です。高解像度PNG/WebPを作る場合も、`352 × 604`や`704 × 1208`のように同じ縦横比と同じ中心位置を使います。服や靴だけの素材でも画像をパーツの大きさに切り詰めず、全身キャンバス内の正しい位置に置いて透明背景で書き出します。
+
+### ファイル名ルール
+
+保存データと対応を確認しやすくするため、ファイル名には既存の`itemId`を使います。
+
+```text
+hair-bob.webp
+outfit-uniform.webp
+shoes-brown.webp
+accessory-ribbon.webp
+```
+
+髪が顔の後ろと前に分かれる場合は、次のようにします。
+
+```text
+hair-bob-back.webp
+hair-bob-front.webp
+```
+
+`itemId`は購入状態と装備状態としてLocalStorageへ保存されています。既存の`itemId`を変更すると、以前に入手・装備したアイテムを見つけられなくなるため、画像を差し替えるときも変更しません。
+
+### `data/items.ts`へ画像を登録する
+
+画像が完成したアイテムの`visualType`を`layeredImage`にし、サムネイルとレイヤーを登録します。
+
+```ts
+visualType: "layeredImage",
+visualConfig: {
+  // 画像がないときに使う既存CSS設定も残します。
+  styleKey: "bob",
+  accent: "#6d4553",
+  thumbnailSrc: "/assets/avatar/thumbnails/hair-bob.webp",
+  layers: [
+    {
+      slot: "hairBack",
+      src: "/assets/avatar/hair/hair-bob-back.webp",
+    },
+    {
+      slot: "hairFront",
+      src: "/assets/avatar/hair/hair-bob-front.webp",
+    },
+  ],
+},
+```
+
+使用できる`slot`は次の9種類です。配列の順番ではなく、このslot順で重なります。
+
+```text
+hairBack → body → shoes → outfit → face → hairFront → accessory → pet → effect
+```
+
+サムネイルは正方形を推奨します。レイヤー画像は透明背景のPNG、WebP、SVGを利用できます。制作元の大きな原画ファイルは`public`へ置かず、Web表示用に書き出したファイルだけを配置してください。
+
+### CSS表示との切り替え
+
+- `visualType: "css"`: 従来のCSSパーツを表示
+- `visualType: "emoji"`: 従来の絵文字アクセサリーを表示
+- `visualType: "layeredImage"`: CSSアバターの上へ画像レイヤーを表示
+- `thumbnailSrc`がない、または画像読み込みに失敗: `icon`の絵文字へ戻る
+- `layers`が空、または画像読み込みに失敗: 従来のCSSアバターがそのまま残る
+
+現在は`hair-bob`、`outfit-uniform`、`shoes-brown`、`accessory-none`だけをテスト用の`layeredImage`設定にしています。アバター用レイヤーは透明な仮SVGなので、見た目は従来のCSS版から変わりません。完成画像が用意できたら、同じファイル名で置き換えられます。
+
+### GitHub Pagesでの画像パス
+
+GitHub Pagesでは公開URLに`/kirakira-typing-school`が入ります。コンポーネント内でURLを直接連結せず、`features/avatar/assets.ts`の`getAssetPath()`を必ず使ってください。
+
+`data/items.ts`にはローカルと共通の`/assets/avatar/...`形式で記載します。ビルド時に`next.config.ts`が公開用のbasePathを`NEXT_PUBLIC_BASE_PATH`へ渡すため、ローカルでは`/assets/avatar/...`、GitHub Pagesでは`/kirakira-typing-school/assets/avatar/...`として読み込まれます。
+
+### 新しい高品質素材を追加する手順
+
+1. 既存の`itemId`を確認します。
+2. 共通キャンバス上で透明背景のレイヤー画像を制作します。
+3. `public/assets/avatar/`内の該当カテゴリへ画像を置きます。
+4. `public/assets/avatar/thumbnails/`へ正方形サムネイルを置きます。
+5. `data/items.ts`の対象アイテムだけを`layeredImage`設定へ変更します。
+6. ローカルの着せ替え・ホーム・タイピング・クリア画面で位置を確認します。
+7. `PAGES_BASE_PATH=/kirakira-typing-school pnpm run build:pages`で公開用パスも確認します。
 
 ### レア度と価格
 

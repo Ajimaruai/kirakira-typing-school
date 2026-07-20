@@ -1,6 +1,7 @@
 "use client";
 
 import { Avatar } from "@/components/Avatar";
+import { ItemThumbnail } from "@/components/ItemThumbnail";
 import { avatarItems, categoryLabels, rarityLabels } from "@/data/items";
 import type { AvatarCategory, AvatarSelection } from "@/features/avatar/types";
 import type { PurchaseStatus } from "@/features/inventory/shop";
@@ -50,7 +51,7 @@ export function DressUpScreen({ avatar, coins, ownedItemIds, unlockedItemIds, ac
               const forSale = item.rewardType !== "stageReward";
               return <article key={item.itemId} className={`item-card item-card--${item.rarity} ${selected ? "item-card--selected" : ""} ${owned ? "item-card--owned" : ""}`} data-testid={`item-${item.itemId}`}>
                 <span className={`rarity-badge rarity-badge--${item.rarity}`}>{rarityLabels[item.rarity]}</span>
-                <span className="item-icon" aria-hidden="true">{item.icon}</span>
+                <ItemThumbnail item={item} />
                 <b>{item.name}</b>
                 <small>{item.description}</small>
                 {!owned && forSale && <span className="price-badge"><i>●</i>{item.price}</span>}

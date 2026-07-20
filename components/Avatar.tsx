@@ -1,10 +1,48 @@
 import { findAvatarItem } from "@/data/items";
+import { getAssetPath } from "@/features/avatar/assets";
 import type { AvatarSelection } from "@/features/avatar/types";
+import type { AvatarImageLayer, AvatarItem, AvatarLayerSlot } from "@/features/inventory/types";
 import type { CSSProperties } from "react";
 
 const itemFor = (id?: string) => id ? findAvatarItem(id) : undefined;
 
 export type AvatarSize = "small" | "medium" | "large";
+
+const layerOrder: Record<AvatarLayerSlot, number> = {
+  hairBack: 0,
+  body: 1,
+  shoes: 2,
+  outfit: 3,
+  face: 4,
+  hairFront: 5,
+  accessory: 6,
+  pet: 7,
+  effect: 8,
+};
+
+const imageLayersFor = (items: Array<AvatarItem | undefined>) => items
+  .flatMap((item) => item?.visualType === "layeredImage" ? (item.visualConfig.layers ?? []) : [])
+  .map((layer, index) => ({ ...layer, index }))
+  .sort((left, right) => layerOrder[left.slot] - layerOrder[right.slot] || left.index - right.index);
+
+function AvatarImageLayers({ layers }: { layers: Array<AvatarImageLayer & { index: number }> }) {
+  if (layers.length === 0) return null;
+
+  return <div className="avatar__image-layers" aria-hidden="true">
+    {layers.map((layer) => {
+      // 静的exportで任意数の透明レイヤーを重ねるため、最適化不要のimgを使います。
+      // eslint-disable-next-line @next/next/no-img-element
+      return <img
+        key={`${layer.slot}-${layer.index}-${layer.src}`}
+        className={`avatar__image-layer avatar__image-layer--${layer.slot}`}
+        src={getAssetPath(layer.src)}
+        alt=""
+        draggable={false}
+        onError={(event) => { event.currentTarget.hidden = true; }}
+      />;
+    })}
+  </div>;
+}
 
 export function Avatar({ selection, size = "large", celebration = false }: { selection: AvatarSelection; size?: AvatarSize; celebration?: boolean }) {
   const hairItem = itemFor(selection.hair);
@@ -16,6 +54,7 @@ export function Avatar({ selection, size = "large", celebration = false }: { sel
   const shoes = shoesItem?.visualConfig.styleKey ?? "brown";
   const accessory = accessoryItem?.visualConfig.styleKey ?? "none";
   const hairStyle = { "--hair-color": hairItem?.visualConfig.accent } as CSSProperties;
+  const imageLayers = imageLayersFor([hairItem, outfitItem, shoesItem, accessoryItem]);
 
   return (
     <div className={`avatar-preview avatar-preview--${size} ${celebration ? "avatar-preview--celebrate" : ""}`} aria-label="着せ替えした主人公アバター" data-avatar-size={size}>
@@ -37,6 +76,7 @@ export function Avatar({ selection, size = "large", celebration = false }: { sel
         <i className="avatar__arm avatar__arm--left" /><i className="avatar__arm avatar__arm--right" />
         <i className={`avatar__leg avatar__leg--left avatar__shoe--${shoes}`} />
         <i className={`avatar__leg avatar__leg--right avatar__shoe--${shoes}`} />
+        <AvatarImageLayers layers={imageLayers} />
       </div>
     </div>
   );

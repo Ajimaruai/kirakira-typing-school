@@ -1,4 +1,5 @@
 import { Avatar } from "@/components/Avatar";
+import { ItemThumbnail } from "@/components/ItemThumbnail";
 import { avatarItems } from "@/data/items";
 import type { AvatarSelection } from "@/features/avatar/types";
 import type { GameResult, Level, Stage } from "@/features/game/types";
@@ -38,7 +39,7 @@ export function ClearScreen({ result, stage, reward, unlockedLevel, avatar, hasN
               {reward.firstClear && <span>初回クリアボーナス</span>}
               {reward.threeStarBonus && <span>星3ボーナス</span>}
             </div>
-            {item ? <div className="new-item"><i>NEW!</i><strong>{item.icon}</strong><p>{item.name}<small>を ゲットしたよ！</small></p></div> : <div className="new-item new-item--plain"><strong>💮</strong><p>{reward.firstClear ? "はじめてクリア！" : "がんばりスタンプ"}<small>よく がんばったね！</small></p></div>}
+            {item ? <div className="new-item"><i>NEW!</i><ItemThumbnail item={item} className="new-item__thumbnail" /><p>{item.name}<small>を ゲットしたよ！</small></p></div> : <div className="new-item new-item--plain"><strong>💮</strong><p>{reward.firstClear ? "はじめてクリア！" : "がんばりスタンプ"}<small>よく がんばったね！</small></p></div>}
           </> : <div className="retry-tip"><strong>{result.correct} / 12</strong><span>8もん正解で クリア！</span></div>}
           <p className="result-note">{result.correct}もん せいかい　・　キーのミス {result.mistakes}かい</p>
         </section>
